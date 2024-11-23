@@ -115,7 +115,7 @@ data class CategoryUpdateRequest(
 @Schema(description = "Data transfer object for Product createRequest")
 data class ProductCreateRequest(
 
-    @Schema(description = "Product name", example = "Smartphone")
+    @Schema(description = "Product name", example = "Samsung A51")
     @field:Nonnull var name: String,
 
     @Schema(description = "Product stock count", example = "50")
@@ -165,7 +165,7 @@ data class ProductResponse(
 data class ProductUpdateRequest(
 
     @Schema(description = "Product name", example = "Smartphone")
-    @field:Nonnull var name: String,
+    @field:Nonnull val name: String,
 
     @Schema(description = "Product stock count", example = "50")
     var stockCount: Int,

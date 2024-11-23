@@ -7,10 +7,12 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
+import org.springframework.data.jpa.repository.Query
 import org.springframework.data.jpa.repository.support.JpaEntityInformation
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository
 import org.springframework.data.repository.NoRepositoryBean
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 
 @NoRepositoryBean
@@ -53,24 +55,75 @@ class BaseRepositoryImpl<T : BaseEntity>(
 }
 
 @Repository
-interface UserRepository : BaseRepository<User> {}
+interface UserRepository : BaseRepository<User> {
+    fun findByUsernameAndDeletedFalse(username: String): User?
+
+    @Query("""
+        select u from users u
+        where u.id != :id
+        and u.username = :username
+        and u.deleted = false 
+    """)
+    fun findByUsername(id: Long, username: String): User?
+
+
+}
 
 
 @Repository
-interface CategoryRepository : BaseRepository<Category> {}
+interface CategoryRepository : BaseRepository<Category> {
+    @Query(value = "select count(*) > 0 from category c where c.name = :name", nativeQuery = true)
+    fun existsByName(@Param("name") name: String): Boolean
+
+    fun findByNameAndDeletedFalse(ame: String): Category?
+
+    @Query("""
+        select c from category c
+        where c.id != :id
+        and c.name = :name
+        and c.deleted = false 
+    """)
+    fun findByName(id: Long, name: String): Category?
+
+}
 
 
 @Repository
-interface ProductRepository : BaseRepository<Product> {}
+interface ProductRepository : BaseRepository<Product> {
+    @Query(value = "select count(*) > 0 from product p where p.name = :name", nativeQuery = true)
+    fun existsByName(@Param("name") name: String): Boolean
+
+
+    fun findByNameAndDeletedFalse(ame: String): Product?
+
+    @Query("""
+        select p from product p
+        where p.id != :id
+        and p.name = :name
+        and p.deleted = false 
+    """)
+    fun findByName(id: Long, name: String): Product?
+
+}
 
 
 
 @Repository
-interface OrderRepository : BaseRepository<Order> {}
+interface OrderRepository : BaseRepository<Order> {
+    @Query(value = "select count(*) > 0 from user u where u.id = :id", nativeQuery = true)
+    fun existsByUserId(@Param("id") id: Long?): Boolean
+}
 
 
 @Repository
-interface OrderItemRepository : BaseRepository<OrderItem> {}
+interface OrderItemRepository : BaseRepository<OrderItem> {
+
+    @Query(value = "select count(*) > 0 from product p where p.id = :id", nativeQuery = true)
+    fun existsByProductId(@Param("id") id: Long?): Boolean
+
+    @Query(value = "select count(*) > 0 from orders o where o.id = :id", nativeQuery = true)
+    fun existsByOrderId(@Param("id") id: Long?): Boolean
+}
 
 
 

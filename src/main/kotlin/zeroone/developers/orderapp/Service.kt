@@ -76,11 +76,25 @@ class UserServiceImpl(
     }
 
     override fun create(request: UserCreateRequest) {
-        TODO("Not yet implemented")
+        request.run {
+            val user = userRepository.findByUsernameAndDeletedFalse(username)
+            if (user != null) throw UserAlreadyExistsException()
+            userRepository.save(this.toEntity())
+        }
     }
 
     override fun update(id: Long, request: UserUpdateRequest) {
-        TODO("Not yet implemented")
+        val user = userRepository.findByIdAndDeletedFalse(id) ?: throw UserNotFoundException()
+        request.run {
+            username.let {
+                val findByUsername = userRepository.findByUsername(id, it)
+                if (findByUsername != null) throw UserAlreadyExistsException()
+                user.username = it
+            }
+            password.let { user.password = it }
+            role.let { user.role = it }
+        }
+        userRepository.save(user)
     }
 
     override fun delete(id: Long) {
@@ -114,11 +128,23 @@ class CategoryServiceImpl(
     }
 
     override fun create(request: CategoryCreateRequest) {
-        TODO("Not yet implemented")
+        request.run {
+            val category = categoryRepository.findByNameAndDeletedFalse(name)
+            if (category != null) throw CategoryAlreadyExistsException()
+            categoryRepository.save(this.toEntity())
+        }
     }
 
     override fun update(id: Long, request: CategoryUpdateRequest) {
-        TODO("Not yet implemented")
+        val category = categoryRepository.findByIdAndDeletedFalse(id) ?: throw CategoryNotFoundException()
+        request.run {
+            name.let {
+                val findByName = categoryRepository.findByName(id, it)
+                if (findByName != null) throw CategoryAlreadyExistsException()
+                category.name = it
+            }
+        }
+        categoryRepository.save(category)
     }
 
     override fun delete(id: Long) {
@@ -152,11 +178,29 @@ class ProductServiceImpl(
     }
 
     override fun create(request: ProductCreateRequest) {
-        TODO("Not yet implemented")
+        request.run {
+            val product = productRepository.findByNameAndDeletedFalse(name)
+            if (product != null) throw ProductAlreadyExistsException()
+            val referenceCategory = entityManager.getReference(
+                Category::class.java, categoryId
+            )
+            productRepository.save(this.toEntity(referenceCategory))
+
+        }
     }
 
     override fun update(id: Long, request: ProductUpdateRequest) {
-        TODO("Not yet implemented")
+        val product = productRepository.findByIdAndDeletedFalse(id)?.let { throw ProductNotFoundException() }
+        request.run {
+            name.let {
+                val findByName = productRepository.findByName(id, it)
+                if (findByName != null) throw ProductAlreadyExistsException()
+                product.name = it
+            }
+            stockCount.let { product.stockCount = it }
+            price.let { product.price = it }
+        }
+        product?.let { productRepository.save(it) }
     }
 
     override fun delete(id: Long) {
@@ -191,11 +235,22 @@ class OrderServiceImpl(
     }
 
     override fun create(request: OrderCreateRequest) {
-        TODO("Not yet implemented")
+        request.run {
+            val userExists = orderRepository.existsByUserId(userId)
+            if (!userExists) throw UserNotFoundException()
+            val referenceUser = entityManager.getReference(
+                User::class.java, userId)
+            orderRepository.save(this.toEntity(referenceUser))
+        }
     }
 
     override fun update(id: Long, request: OrderUpdateRequest) {
-        TODO("Not yet implemented")
+        val order = orderRepository.findByIdAndDeletedFalse(id) ?: throw OrderNotFoundException()
+        request.run {
+            status.let { order.status = it }
+            totalPrice.let { order.totalPrice = it }
+        }
+        orderRepository.save(order)
     }
 
     override fun delete(id: Long) {
@@ -230,11 +285,28 @@ class OrderItemServiceImpl(
     }
 
     override fun create(request: OrderItemCreateRequest) {
-        TODO("Not yet implemented")
+        request.run {
+            val productExists = orderItemRepository.existsByProductId(productId)
+            if (!productExists) throw ProductNotFoundException()
+            val orderExists = orderItemRepository.existsByOrderId(orderId)
+            if (!orderExists) throw OrderNotFoundException()
+
+            val product = entityManager.getReference(
+                Product::class.java,productId)
+            val order = entityManager.getReference(
+                Order::class.java,orderId)
+            orderItemRepository.save(this.toEntity(product,order))
+        }
     }
 
     override fun update(id: Long, request: OrderItemUpdateRequest) {
-        TODO("Not yet implemented")
+        val orderItem = orderItemRepository.findByIdAndDeletedFalse(id) ?: throw OrderItemNotFoundException()
+        request.run {
+            quantity.let { orderItem.quantity = it }
+            unitPrice.let { orderItem.unitPrice = it }
+            totalPrice.let { orderItem.totalPrice = it }
+        }
+        orderItemRepository.save(orderItem)
     }
 
     override fun delete(id: Long) {
