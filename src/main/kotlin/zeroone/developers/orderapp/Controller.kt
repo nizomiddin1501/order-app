@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.validation.Valid
 import lombok.RequiredArgsConstructor
 import org.springframework.context.support.ResourceBundleMessageSource
-import org.springframework.data.domain.Pageable
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -35,8 +34,11 @@ class UserController(val service: UserService) {
 
     @Operation(summary = "Get all users with pagination", description = "Fetches users with pagination support.")
     @ApiResponses(ApiResponse(responseCode = "200", description = "Successfully fetched paginated users"))
-    @GetMapping
-    fun getAll(pageable: Pageable) = service.getAll(pageable)
+    @GetMapping("/page")
+    fun getAll(
+        @RequestParam(value = "page", defaultValue = "0") page: Int,
+        @RequestParam(value = "size", defaultValue = "10") size: Int) =
+        service.getAll(page,size)
 
 
     @Operation(summary = "Get user by ID", description = "Fetches a single user based on the provided ID.")
@@ -74,7 +76,6 @@ class UserController(val service: UserService) {
 @RequestMapping("/api/categories")
 class CategoryController(val service: CategoryService) {
 
-
     @Operation(summary = "Get all categories", description = "Fetches all categories from the database.")
     @ApiResponses(ApiResponse(responseCode = "200", description = "Successfully fetched all categories"))
     @GetMapping
@@ -83,8 +84,11 @@ class CategoryController(val service: CategoryService) {
 
     @Operation(summary = "Get all categories with pagination", description = "Fetches categories with pagination support.")
     @ApiResponses(ApiResponse(responseCode = "200", description = "Successfully fetched paginated categories"))
-    @GetMapping
-    fun getAll(pageable: Pageable) = service.getAll(pageable)
+    @GetMapping("/page")
+    fun getAll(
+        @RequestParam(value = "page", defaultValue = "0") page: Int,
+        @RequestParam(value = "size", defaultValue = "10") size: Int) =
+        service.getAll(page,size)
 
 
     @Operation(summary = "Get category by ID", description = "Fetches a single category based on the provided category ID.")
@@ -132,8 +136,11 @@ class ProductController(val service: ProductService) {
 
     @Operation(summary = "Get all products with pagination", description = "Fetches products with pagination support.")
     @ApiResponses(ApiResponse(responseCode = "200", description = "Successfully fetched paginated products"))
-    @GetMapping
-    fun getAll(pageable: Pageable) = service.getAll(pageable)
+    @GetMapping("/page")
+    fun getAll(
+        @RequestParam(value = "page", defaultValue = "0") page: Int,
+        @RequestParam(value = "size", defaultValue = "10") size: Int) =
+        service.getAll(page,size)
 
 
     @Operation(summary = "Get product by ID", description = "Fetches a single product based on the provided product ID.")
@@ -148,7 +155,6 @@ class ProductController(val service: ProductService) {
         ApiResponse(responseCode = "400", description = "Invalid request data"))
     @PostMapping
     fun create(@RequestBody @Valid request: ProductCreateRequest) = service.create(request)
-
 
 
     @Operation(summary = "Update existing product", description = "Updates an existing product based on the provided ID.")
@@ -181,8 +187,11 @@ class OrderController(val service: OrderService) {
 
     @Operation(summary = "Get all orders with pagination", description = "Fetches orders with pagination support.")
     @ApiResponses(ApiResponse(responseCode = "200", description = "Successfully fetched paginated orders"))
-    @GetMapping
-    fun getAll(pageable: Pageable) = service.getAll(pageable)
+    @GetMapping("/page")
+    fun getAll(
+        @RequestParam(value = "page", defaultValue = "0") page: Int,
+        @RequestParam(value = "size", defaultValue = "10") size: Int) =
+        service.getAll(page,size)
 
 
     @Operation(summary = "Get order by ID", description = "Fetches a single order based on the provided ID.")
@@ -221,7 +230,6 @@ class OrderController(val service: OrderService) {
 @RequestMapping("/api/order-items")
 class OrderItemController(val service: OrderItemService) {
 
-
     @Operation(summary = "Get all orderItems", description = "Fetches all orderItems from the database.")
     @ApiResponses(ApiResponse(responseCode = "200", description = "Successfully fetched all orderItems"))
     @GetMapping
@@ -230,8 +238,11 @@ class OrderItemController(val service: OrderItemService) {
 
     @Operation(summary = "Get all orderItems with pagination", description = "Fetches orderItems with pagination support.")
     @ApiResponses(ApiResponse(responseCode = "200", description = "Successfully fetched paginated orderItems"))
-    @GetMapping
-    fun getAll(pageable: Pageable) = service.getAll(pageable)
+    @GetMapping("/page")
+    fun getAll(
+        @RequestParam(value = "page", defaultValue = "0") page: Int,
+        @RequestParam(value = "size", defaultValue = "10") size: Int) =
+        service.getAll(page,size)
 
 
     @Operation(summary = "Get orderItem by ID", description = "Fetches a single orderItem based on the provided ID.")

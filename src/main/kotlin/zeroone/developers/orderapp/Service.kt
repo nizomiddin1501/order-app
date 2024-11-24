@@ -2,11 +2,12 @@ package zeroone.developers.orderapp
 
 import jakarta.persistence.EntityManager
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 
 interface UserService {
-    fun getAll(pageable: Pageable): Page<UserResponse>
+    fun getAll(page: Int, size: Int): Page<UserResponse>
     fun getAll(): List<UserResponse>
     fun getOne(id: Long): UserResponse
     fun create(request: UserCreateRequest)
@@ -15,7 +16,7 @@ interface UserService {
 }
 
 interface CategoryService {
-    fun getAll(pageable: Pageable): Page<CategoryResponse>
+    fun getAll(page: Int, size: Int): Page<CategoryResponse>
     fun getAll(): List<CategoryResponse>
     fun getOne(id: Long): CategoryResponse
     fun create(request: CategoryCreateRequest)
@@ -24,7 +25,7 @@ interface CategoryService {
 }
 
 interface ProductService {
-    fun getAll(pageable: Pageable): Page<ProductResponse>
+    fun getAll(page: Int, size: Int): Page<ProductResponse>
     fun getAll(): List<ProductResponse>
     fun getOne(id: Long): ProductResponse
     fun create(request: ProductCreateRequest)
@@ -33,7 +34,7 @@ interface ProductService {
 }
 
 interface OrderService {
-    fun getAll(pageable: Pageable): Page<OrderResponse>
+    fun getAll(page: Int, size: Int): Page<OrderResponse>
     fun getAll(): List<OrderResponse>
     fun getOne(id: Long): OrderResponse
     fun create(request: OrderCreateRequest)
@@ -42,7 +43,7 @@ interface OrderService {
 }
 
 interface OrderItemService {
-    fun getAll(pageable: Pageable): Page<OrderItemResponse>
+    fun getAll(page: Int, size: Int): Page<OrderItemResponse>
     fun getAll(): List<OrderItemResponse>
     fun getOne(id: Long): OrderItemResponse
     fun create(request: OrderItemCreateRequest)
@@ -58,10 +59,10 @@ class UserServiceImpl(
     private val userMapper: UserMapper
 ) : UserService {
 
-    override fun getAll(pageable: Pageable): Page<UserResponse> {
-        return userRepository.findAllNotDeletedForPageable(pageable).map {
-            userMapper.toDto(it)
-        }
+    override fun getAll(page: Int, size: Int): Page<UserResponse> {
+        val pageable: Pageable = PageRequest.of(page, size)
+        val usersPage = userRepository.findAllNotDeletedForPageable(pageable)
+        return usersPage.map { userMapper.toDto(it) }
     }
 
     override fun getAll(): List<UserResponse> {
@@ -103,10 +104,10 @@ class CategoryServiceImpl(
     private val categoryMapper: CategoryMapper
 ) : CategoryService {
 
-    override fun getAll(pageable: Pageable): Page<CategoryResponse> {
-        return categoryRepository.findAllNotDeletedForPageable(pageable).map {
-            categoryMapper.toDto(it)
-        }
+    override fun getAll(page: Int, size: Int): Page<CategoryResponse> {
+        val pageable: Pageable = PageRequest.of(page, size)
+        val categoriesPage = categoryRepository.findAllNotDeletedForPageable(pageable)
+        return categoriesPage.map { categoryMapper.toDto(it) }
     }
 
     override fun getAll(): List<CategoryResponse> {
@@ -147,10 +148,10 @@ class ProductServiceImpl(
     private val entityManager: EntityManager
 ) : ProductService {
 
-    override fun getAll(pageable: Pageable): Page<ProductResponse> {
-        return productRepository.findAllNotDeletedForPageable(pageable).map {
-            productMapper.toDto(it)
-        }
+    override fun getAll(page: Int, size: Int): Page<ProductResponse> {
+        val pageable: Pageable = PageRequest.of(page, size)
+        val productsPage = productRepository.findAllNotDeletedForPageable(pageable)
+        return productsPage.map { productMapper.toDto(it) }
     }
 
     override fun getAll(): List<ProductResponse> {
@@ -198,10 +199,10 @@ class OrderServiceImpl(
     private val orderMapper: OrderMapper
 ) : OrderService {
 
-    override fun getAll(pageable: Pageable): Page<OrderResponse> {
-        return orderRepository.findAllNotDeletedForPageable(pageable).map {
-            orderMapper.toDto(it)
-        }
+    override fun getAll(page: Int, size: Int): Page<OrderResponse> {
+        val pageable: Pageable = PageRequest.of(page, size)
+        val ordersPage = orderRepository.findAllNotDeletedForPageable(pageable)
+        return ordersPage.map { orderMapper.toDto(it) }
     }
 
     override fun getAll(): List<OrderResponse> {
@@ -245,10 +246,10 @@ class OrderItemServiceImpl(
     private val entityManager: EntityManager
 ) : OrderItemService {
 
-    override fun getAll(pageable: Pageable): Page<OrderItemResponse> {
-        return orderItemRepository.findAllNotDeletedForPageable(pageable).map {
-            orderItemMapper.toDto(it)
-        }
+    override fun getAll(page: Int, size: Int): Page<OrderItemResponse> {
+        val pageable: Pageable = PageRequest.of(page, size)
+        val orderItemsPage = orderItemRepository.findAllNotDeletedForPageable(pageable)
+        return orderItemsPage.map { orderItemMapper.toDto(it) }
     }
 
     override fun getAll(): List<OrderItemResponse> {
@@ -270,9 +271,11 @@ class OrderItemServiceImpl(
         if (!orderExists) throw OrderNotFoundException()
 
         val product = entityManager.getReference(
-            Product::class.java, request.productId)
+            Product::class.java, request.productId
+        )
         val order = entityManager.getReference(
-            Order::class.java, request.orderId)
+            Order::class.java, request.orderId
+        )
         orderItemRepository.save(orderItemMapper.toEntity(request, product, order))
     }
 
