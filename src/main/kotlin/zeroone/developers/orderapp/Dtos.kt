@@ -20,11 +20,7 @@ data class UserCreateRequest(
     @Schema(description = "User role", example = "USER")
     @Enumerated(EnumType.STRING)
     var role: UserRole = UserRole.USER
-){
-    fun toEntity(): User {
-        return User(username,password,role)
-    }
-}
+)
 
 
 @Schema(description = "Data transfer object for User createRequest")
@@ -42,15 +38,7 @@ data class UserResponse(
     @Schema(description = "User role", example = "USER")
     @Enumerated(EnumType.STRING)
     var role: UserRole?
-){
-    companion object{
-        fun toResponse(user: User): UserResponse{
-            user.run {
-                return UserResponse(id!!,username,password,role)
-            }
-        }
-    }
-}
+)
 
 
 @Schema(description = "Data transfer object for User createRequest")
@@ -70,19 +58,12 @@ data class UserUpdateRequest(
 )
 
 
-////
-
-
 @Schema(description = "Data transfer object for Category createRequest")
 data class CategoryCreateRequest(
 
     @Schema(description = "Category name", example = "Electronics")
     @field:Nonnull var name: String
-){
-    fun toEntity(): Category {
-        return Category(name)
-    }
-}
+)
 
 @Schema(description = "Data transfer object for Category response")
 data class CategoryResponse(
@@ -90,18 +71,9 @@ data class CategoryResponse(
     @Schema(description = "Category ID", example = "1")
     val id: Long?,
 
-    @Column(nullable = false)
     @Schema(description = "Category name", example = "Electronics")
     var name: String?
-){
-    companion object{
-        fun toResponse(category: Category): CategoryResponse{
-            category.run {
-                return CategoryResponse(id!!,name)
-            }
-        }
-    }
-}
+)
 
 @Schema(description = "Data transfer object for Category updateRequest")
 data class CategoryUpdateRequest(
@@ -126,11 +98,7 @@ data class ProductCreateRequest(
 
     @Schema(description = "Category ID for the product", example = "3")
     @field:Nonnull val categoryId: Long
-){
-    fun toEntity(category: Category): Product {
-        return Product(name,stockCount,price,category)
-    }
-}
+)
 
 
 @Schema(description = "Data transfer object for Product response")
@@ -150,15 +118,7 @@ data class ProductResponse(
 
     @Schema(description = "Category name for the product", example = "Smartphone")
     val categoryName: String?
-){
-    companion object{
-        fun toResponse(product: Product): ProductResponse{
-            product.run {
-                return ProductResponse(id!!,name,stockCount,price,category.name)
-            }
-        }
-    }
-}
+)
 
 
 @Schema(description = "Data transfer object for Product updateRequest")
@@ -188,11 +148,7 @@ data class OrderCreateRequest(
 
     @Schema(description = "Order total price", example = "150.00")
     var totalPrice: BigDecimal
-){
-    fun toEntity(user: User): Order {
-        return Order(user,status,totalPrice)
-    }
-}
+)
 
 
 @Schema(description = "Data transfer object for Order response")
@@ -210,15 +166,7 @@ data class OrderResponse(
 
     @Schema(description = "Order total price", example = "150.00")
     var totalPrice: BigDecimal?
-){
-    companion object{
-        fun toResponse(order: Order): OrderResponse{
-            order.run {
-                return OrderResponse(id!!,user.username,status,totalPrice)
-            }
-        }
-    }
-}
+)
 
 
 @Schema(description = "Data transfer object for Order updateRequest")
@@ -251,11 +199,7 @@ data class OrderItemCreateRequest(
 
     @Schema(description = "Order ID for the item", example = "3")
     @field:Nonnull val orderId: Long
-){
-    fun toEntity(product: Product, order: Order): OrderItem {
-        return OrderItem(product,quantity,unitPrice,totalPrice,order)
-    }
-}
+)
 
 
 @Schema(description = "Data transfer object for Order Item response")
@@ -278,15 +222,7 @@ data class OrderItemResponse(
 
     @Schema(description = "Order status for the item", example = "PENDING")
     val orderStatus: String?
-){
-    companion object{
-        fun toResponse(orderItem: OrderItem): OrderItemResponse{
-            orderItem.run {
-                return OrderItemResponse(id!!,product.name,quantity,unitPrice,totalPrice, order.status.toString())
-            }
-        }
-    }
-}
+)
 
 
 @Schema(description = "Data transfer object for Order Item updateRequest")
