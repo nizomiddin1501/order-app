@@ -177,6 +177,44 @@ class OrderItemMapper {
 }
 
 
+@Component
+class PaymentMapper {
+
+    fun toDto(payment: Payment): PaymentResponse {
+        return payment.run {
+            PaymentResponse(
+                id = this.id,
+                orderStatus = this.order.status.toString(),
+                amount = this.amount,
+                paymentDate = this.paymentDate,
+                paymentMethod = this.paymentMethod
+            )
+        }
+    }
+
+    fun toEntity(createRequest: PaymentCreateRequest, order: Order): Payment {
+        return createRequest.run {
+            Payment(
+                order = order,
+                amount = this.amount,
+                paymentDate = this.paymentDate,
+                paymentMethod = this.paymentMethod
+            )
+        }
+    }
+
+    fun updateEntity(payment: Payment, updateRequest: PaymentUpdateRequest): Payment {
+        return updateRequest.run {
+            payment.apply {
+                updateRequest.amount.let { this.amount = it }
+                updateRequest.paymentDate.let { this.paymentDate = it }
+                updateRequest.paymentMethod.let { this.paymentMethod = it }
+            }
+        }
+    }
+}
+
+
 
 
 

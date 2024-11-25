@@ -14,6 +14,8 @@ import org.springframework.data.repository.NoRepositoryBean
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.time.LocalDateTime
+import java.util.*
 
 @NoRepositoryBean
 interface BaseRepository<T : BaseEntity> : JpaRepository<T, Long>, JpaSpecificationExecutor<T> {
@@ -66,7 +68,14 @@ interface UserRepository : BaseRepository<User> {
     """)
     fun findByUsername(id: Long, username: String): User?
 
+}
 
+interface PaymentRepository : JpaRepository<Payment, Long> {
+
+    // Foydalanuvchiga tegishli to'lovlar ro'yxatini olish
+    fun findByUser(user: User): List<Payment>
+
+    fun findByOrderUserId(userId: Long): List<Payment>
 }
 
 
@@ -90,9 +99,9 @@ interface CategoryRepository : BaseRepository<Category> {
 
 @Repository
 interface ProductRepository : BaseRepository<Product> {
-    @Query(value = "select count(*) > 0 from product p where p.name = :name", nativeQuery = true)
-    fun existsByName(@Param("name") name: String): Boolean
 
+    // Mahsulot ID bo'yicha mahsulotni olish
+    //fun findById(productId: Long): Optional<Product>
 
     fun findByNameAndDeletedFalse(ame: String): Product?
 
@@ -110,20 +119,41 @@ interface ProductRepository : BaseRepository<Product> {
 
 @Repository
 interface OrderRepository : BaseRepository<Order> {
-    @Query(value = "select count(*) > 0 from user u where u.id = :id", nativeQuery = true)
-    fun existsByUserId(@Param("id") id: Long?): Boolean
+//    fun findAllByUserId(userId: Long): List<Order>
+//    @Query("SELECT o FROM orders o WHERE o.user.id = :userId AND MONTH(o.createdDate) = :month AND YEAR(o.createdDate) = :year")
+//    fun findByUserIdAndMonthAndYear(userId: Long, month: Int, year: Int): List<Order>
+//
+
+    // Foydalanuvchi ID bo'yicha barcha buyurtmalarni olish
+    fun findAllByUserId(userId: Long): List<Order>
+
+    // Foydalanuvchi ID va berilgan oy va yilga asoslanib buyurtmalarni olish
+    @Query("SELECT o FROM orders o WHERE o.user.id = :userId AND FUNCTION('MONTH', o.createdDate) = :month AND FUNCTION('YEAR', o.createdDate) = :year")
+    fun findByUserIdAndMonthAndYear(userId: Long, month: Int, year: Int): List<Order>
+
+    // Foydalanuvchi ID va vaqt oralig'iga ko'ra buyurtmalarni olish
+    @Query("SELECT o FROM orders o WHERE o.user.id = :userId AND o.createdDate BETWEEN :startDate AND :endDate")
+    fun findAllByUserIdAndDateRange(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<Order>
+
+
+
 }
 
 
 @Repository
 interface OrderItemRepository : BaseRepository<OrderItem> {
+    // Order ID bo'yicha OrderItemlarni olish
+    fun findByOrderId(orderId: Long?): List<OrderItem>
 
-    @Query(value = "select count(*) > 0 from product p where p.id = :id", nativeQuery = true)
-    fun existsByProductId(@Param("id") id: Long?): Boolean
+    // Order ID va Product ID bo'yicha OrderItemni olish
+    fun findByOrderIdAndProductId(orderId: Long, productId: Long): Optional<OrderItem>
 
-    @Query(value = "select count(*) > 0 from orders o where o.id = :id", nativeQuery = true)
-    fun existsByOrderId(@Param("id") id: Long?): Boolean
+    // Mahsulot ID bo'yicha barcha buyurtmalarni hisoblash
+    fun countByProductId(productId: Long): Int
+
+
 }
+
 
 
 

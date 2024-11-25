@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.annotation.Nonnull
 import jakarta.persistence.*
 import java.math.BigDecimal
+import java.time.LocalDateTime
 
 data class BaseMessage(val code : Int, val message : String?)
 
@@ -147,7 +148,10 @@ data class OrderCreateRequest(
     var status: OrderStatus = OrderStatus.PENDING,
 
     @Schema(description = "Order total price", example = "150.00")
-    var totalPrice: BigDecimal
+    var totalPrice: BigDecimal,
+
+    @Schema(description = "List of order items")
+    val items: List<OrderItemCreateRequest> = emptyList()  // items
 )
 
 
@@ -236,6 +240,67 @@ data class OrderItemUpdateRequest(
 
     @Schema(description = "Total price of the order item", example = "99.98")
     var totalPrice: BigDecimal,
+)
+
+
+@Schema(description = "Data transfer object for Payment createRequest")
+data class PaymentCreateRequest(
+
+    @Schema(description = "Order ID for the payment", example = "3")
+    @field:Nonnull val orderId: Long,
+
+    @Schema(description = "Amount paid", example = "150.00")
+    var amount: BigDecimal,
+
+    @Schema(description = "Payment date and time", example = "2024-11-24T10:15:30")
+    var paymentDate: LocalDateTime = LocalDateTime.now(),
+
+    @Schema(description = "Payment method used", example = "CREDIT_CARD")
+    var paymentMethod: PaymentMethod
+)
+
+@Schema(description = "Data transfer object for Payment response")
+data class PaymentResponse(
+
+    @Schema(description = "Payment ID", example = "1")
+    val id: Long?,
+
+    @Schema(description = "Order related to the payment", example = "Order ID: 3")
+    val orderStatus: String,
+
+    @Schema(description = "Amount paid", example = "150.00")
+    var amount: BigDecimal,
+
+    @Schema(description = "Payment date and time", example = "2024-11-24T10:15:30")
+    var paymentDate: LocalDateTime = LocalDateTime.now(),
+
+    @Schema(description = "Payment method used", example = "CREDIT_CARD")
+    var paymentMethod: PaymentMethod
+)
+
+
+@Schema(description = "Data transfer object for Payment updateRequest")
+data class PaymentUpdateRequest(
+
+    @Schema(description = "Amount paid", example = "150.00")
+    var amount: BigDecimal,
+
+    @Schema(description = "Payment date and time", example = "2024-11-24T10:15:30")
+    var paymentDate: LocalDateTime = LocalDateTime.now(),
+
+    @Schema(description = "Payment method used", example = "CREDIT_CARD")
+    var paymentMethod: PaymentMethod
+)
+
+data class OrderStatistics(
+    val totalOrders: Int,
+    val totalAmount: Double
+)
+
+data class ProductOrderStatistics(
+    val productName: String,
+    val totalQuantity: Int,
+    val totalAmount: Double
 )
 
 

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.math.BigDecimal
 import java.util.*
 import jakarta.persistence.*
+import java.time.LocalDateTime
 
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener::class)
@@ -126,6 +127,32 @@ class OrderItem(
     @Schema(description = "Order of the item", example = "Order ID: 3")
     val order: Order
 ) : BaseEntity()
+
+
+@Table
+@Entity(name = "payments")
+@Schema(description = "Payment details")
+class Payment(
+
+    @ManyToOne
+    @JoinColumn(name = "order_id", nullable = false)
+    @Schema(description = "Order related to the payment", example = "Order ID: 3")
+    val order: Order,
+
+    @Column(nullable = false)
+    @Schema(description = "Amount paid", example = "150.00")
+    var amount: BigDecimal,
+
+    @Column(nullable = false)
+    @Schema(description = "Payment date and time", example = "2024-11-24T10:15:30")
+    var paymentDate: LocalDateTime = LocalDateTime.now(),
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Schema(description = "Payment method used", example = "CREDIT_CARD")
+    var paymentMethod: PaymentMethod
+) : BaseEntity()
+
 
 
 

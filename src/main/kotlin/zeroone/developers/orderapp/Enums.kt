@@ -9,6 +9,14 @@ enum class OrderStatus {
     PENDING, DELIVERED, FINISHED, CANCELLED
 }
 
+enum class PaymentMethod {
+    CREDIT_CARD,
+    DEBIT_CARD,
+    BANK_TRANSFER,
+    E_WALLET,
+    CASH
+}
+
 
 enum class ErrorCodes(val code:Int) {
 
