@@ -72,8 +72,8 @@ interface UserRepository : BaseRepository<User> {
 
 interface PaymentRepository : JpaRepository<Payment, Long> {
 
-    // Foydalanuvchiga tegishli to'lovlar ro'yxatini olish
-    fun findByUser(user: User): List<Payment>
+//    // Foydalanuvchiga tegishli to'lovlar ro'yxatini olish
+//    fun findByUser(user: User): List<Payment>
 
     fun findByOrderUserId(userId: Long): List<Payment>
 }

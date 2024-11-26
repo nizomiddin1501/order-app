@@ -106,6 +106,14 @@ class InvalidPaymentMethodException : BillingExceptionHandler() {
     }
 }
 
+class InsufficientBalanceException : BillingExceptionHandler() {
+    override fun errorCode(): ErrorCodes {
+        return ErrorCodes.INSUFFICIENT_BALANCE
+    }
+}
+
+
+
 
 
 

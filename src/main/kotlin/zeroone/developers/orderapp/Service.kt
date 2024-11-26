@@ -319,7 +319,8 @@ class OrderServiceImpl(
 class PaymentServiceImpl(
     private val paymentRepository: PaymentRepository,
     private val orderRepository: OrderRepository,
-    private val paymentMapper: PaymentMapper
+    private val paymentMapper: PaymentMapper,
+    private val userRepository: UserRepository
 ) : PaymentService {
 
     //process 3.
@@ -334,6 +335,13 @@ class PaymentServiceImpl(
         } catch (e: IllegalArgumentException) {
             throw InvalidPaymentMethodException()
         }
+        val user = order.user ?: throw UserNotFoundException()
+        if (user.balance < order.totalPrice) {
+            throw InsufficientBalanceException()
+        }
+        user.balance = user.balance.subtract(order.totalPrice)
+        userRepository.save(user)
+
         val payment = paymentMapper.toEntity(createRequest.copy(paymentMethod = paymentMethod), order)
         val savedPayment = paymentRepository.save(payment)
         order.status = OrderStatus.DELIVERED
@@ -444,12 +452,18 @@ class CompleteOrderServiceImpl(
     private val paymentRepository: PaymentRepository,
     private val orderMapper: OrderMapper,
     private val orderItemMapper: OrderItemMapper,
-    private val paymentMapper: PaymentMapper
+    private val paymentMapper: PaymentMapper,
+    private val userRepository: UserRepository
 ) : CompleteOrderService {
 
     override fun processOrder(userId: Long, request: FullOrderRequest): FullOrderResponse {
         val user = userService.getUserEntity(userId)
         val totalPrice = request.items.sumOf { it.totalPrice }
+
+        if (user.balance < totalPrice) {
+            throw InsufficientBalanceException()
+        }
+
         val order = Order(user = user, totalPrice = totalPrice, status = OrderStatus.PENDING)
         orderRepository.save(order)
 
@@ -471,6 +485,10 @@ class CompleteOrderServiceImpl(
         }
         val payment = paymentMapper.toEntity(request.payment.copy(paymentMethod = paymentMethod), order)
         paymentRepository.save(payment)
+
+        user.balance = user.balance.subtract(totalPrice)
+        userRepository.save(user)
+
         order.status = OrderStatus.DELIVERED
         orderRepository.save(order)
         return FullOrderResponse(

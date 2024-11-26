@@ -20,7 +20,10 @@ data class UserCreateRequest(
 
     @Schema(description = "User role", example = "USER")
     @Enumerated(EnumType.STRING)
-    var role: UserRole = UserRole.USER
+    var role: UserRole = UserRole.USER,
+
+    @Schema(description = "User balance", example = "100.0")
+    var balance: BigDecimal
 )
 
 
@@ -38,7 +41,10 @@ data class UserResponse(
 
     @Schema(description = "User role", example = "USER")
     @Enumerated(EnumType.STRING)
-    var role: UserRole?
+    var role: UserRole?,
+
+    @Schema(description = "User balance", example = "100.0")
+    var balance: BigDecimal?
 )
 
 
@@ -55,7 +61,10 @@ data class UserUpdateRequest(
 
     @Schema(description = "User role", example = "USER")
     @Enumerated(EnumType.STRING)
-    var role: UserRole
+    var role: UserRole,
+
+    @Schema(description = "User balance", example = "100.0")
+    var balance: BigDecimal
 )
 
 

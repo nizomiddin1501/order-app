@@ -10,7 +10,8 @@ class UserMapper {
                 id = this.id,
                 username = this.username,
                 password = this.password,
-                role = this.role
+                role = this.role,
+                balance = this.balance
             )
         }
     }
@@ -20,7 +21,8 @@ class UserMapper {
             User(
                 username = this.username,
                 password = this.password,
-                role = this.role
+                role = this.role,
+                balance = this.balance
             )
         }
     }
@@ -31,6 +33,7 @@ class UserMapper {
                 updateRequest.username.let { this.username = it }
                 updateRequest.password.let { this.password = it }
                 updateRequest.role.let { this.role = it }
+                updateRequest.balance.let { this.balance = it }
             }
         }
     }

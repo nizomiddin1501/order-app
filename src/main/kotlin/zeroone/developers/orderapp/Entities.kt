@@ -1,4 +1,5 @@
 package zeroone.developers.orderapp
+
 import io.swagger.v3.oas.annotations.media.Schema
 import org.springframework.data.annotation.CreatedBy
 import org.springframework.data.annotation.CreatedDate
@@ -41,7 +42,10 @@ class User(
 
     @Schema(description = "User role", example = "USER")
     @Enumerated(EnumType.STRING)
-    var role: UserRole = UserRole.USER
+    var role: UserRole = UserRole.USER,
+
+    @Schema(description = "User balance", example = "100.0")
+    var balance: BigDecimal
 ) : BaseEntity()
 
 
