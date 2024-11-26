@@ -82,6 +82,31 @@ class OrderItemNotFoundException : BillingExceptionHandler() {
 }
 
 
+class UserAccessDeniedException : BillingExceptionHandler() {
+    override fun errorCode(): ErrorCodes {
+        return ErrorCodes.ROLE_ACCESS_DENIED
+    }
+}
+
+class CannotCancelOrderException : BillingExceptionHandler() {
+    override fun errorCode(): ErrorCodes {
+        return ErrorCodes.CANNOT_CANCEL_ORDER
+    }
+}
+
+class InvalidOrderStatusException : BillingExceptionHandler() {
+    override fun errorCode(): ErrorCodes {
+        return ErrorCodes.INVALID_ORDER_STATUS
+    }
+}
+
+class InvalidPaymentMethodException : BillingExceptionHandler() {
+    override fun errorCode(): ErrorCodes {
+        return ErrorCodes.PAYMENT_METHOD_NOT_FOUND
+    }
+}
+
+
 
 
 

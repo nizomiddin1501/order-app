@@ -94,14 +94,15 @@ interface CategoryRepository : BaseRepository<Category> {
     """)
     fun findByName(id: Long, name: String): Category?
 
+    // User ID exists check
+    @Query(value = "select count(*) > 0 from category c where c.id = :id", nativeQuery = true)
+    fun existsByCategoryId(@Param("id") id: Long?): Boolean
+
 }
 
 
 @Repository
 interface ProductRepository : BaseRepository<Product> {
-
-    // Mahsulot ID bo'yicha mahsulotni olish
-    //fun findById(productId: Long): Optional<Product>
 
     fun findByNameAndDeletedFalse(ame: String): Product?
 
@@ -119,22 +120,14 @@ interface ProductRepository : BaseRepository<Product> {
 
 @Repository
 interface OrderRepository : BaseRepository<Order> {
-//    fun findAllByUserId(userId: Long): List<Order>
-//    @Query("SELECT o FROM orders o WHERE o.user.id = :userId AND MONTH(o.createdDate) = :month AND YEAR(o.createdDate) = :year")
-//    fun findByUserIdAndMonthAndYear(userId: Long, month: Int, year: Int): List<Order>
-//
 
-    // Foydalanuvchi ID bo'yicha barcha buyurtmalarni olish
     fun findAllByUserId(userId: Long): List<Order>
 
-    // Foydalanuvchi ID va berilgan oy va yilga asoslanib buyurtmalarni olish
     @Query("SELECT o FROM orders o WHERE o.user.id = :userId AND FUNCTION('MONTH', o.createdDate) = :month AND FUNCTION('YEAR', o.createdDate) = :year")
     fun findByUserIdAndMonthAndYear(userId: Long, month: Int, year: Int): List<Order>
 
-    // Foydalanuvchi ID va vaqt oralig'iga ko'ra buyurtmalarni olish
     @Query("SELECT o FROM orders o WHERE o.user.id = :userId AND o.createdDate BETWEEN :startDate AND :endDate")
     fun findAllByUserIdAndDateRange(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<Order>
-
 
 
 }
@@ -142,13 +135,11 @@ interface OrderRepository : BaseRepository<Order> {
 
 @Repository
 interface OrderItemRepository : BaseRepository<OrderItem> {
-    // Order ID bo'yicha OrderItemlarni olish
+
     fun findByOrderId(orderId: Long?): List<OrderItem>
 
-    // Order ID va Product ID bo'yicha OrderItemni olish
     fun findByOrderIdAndProductId(orderId: Long, productId: Long): Optional<OrderItem>
 
-    // Mahsulot ID bo'yicha barcha buyurtmalarni hisoblash
     fun countByProductId(productId: Long): Int
 
 

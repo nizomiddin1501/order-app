@@ -1,9 +1,14 @@
 package zeroone.developers.orderapp
 
+import com.itextpdf.text.Chunk
+import com.itextpdf.text.Document
 import com.itextpdf.text.DocumentException
+import com.itextpdf.text.Paragraph
+import com.itextpdf.text.pdf.PdfWriter
 import jakarta.persistence.EntityManager
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.transaction.Transactional
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -65,8 +70,9 @@ interface OrderItemService {
 
 }
 
-
-
+interface CompleteOrderService{
+    fun processOrder(userId: Long, request: FullOrderRequest): FullOrderResponse
+}
 
 interface FileDownloadService {
 
@@ -79,7 +85,6 @@ interface FileDownloadService {
     @Throws(IOException::class)
     fun generateCSV(userId: Long?, response: HttpServletResponse?)
 }
-
 
 @Service
 class UserServiceImpl(
@@ -179,7 +184,7 @@ class CategoryServiceImpl(
 
     fun checkAdminRole(role: UserRole) {
         if (role != UserRole.ADMIN) {
-            throw IllegalAccessException("Sizda bu amalni bajarish uchun ruxsat yo'q!")
+            throw UserAccessDeniedException()
         }
     }
 }
@@ -189,6 +194,7 @@ class CategoryServiceImpl(
 class ProductServiceImpl(
     private val productRepository: ProductRepository,
     private val productMapper: ProductMapper,
+    private val categoryRepository: CategoryRepository,
     private val entityManager: EntityManager
 ) : ProductService {
 
@@ -214,6 +220,8 @@ class ProductServiceImpl(
         checkAdminRole(role)
         val existingProduct = productRepository.findByNameAndDeletedFalse(request.name)
         if (existingProduct != null) throw ProductAlreadyExistsException()
+        val existsByCategoryId = categoryRepository.existsByCategoryId(request.categoryId)
+        if (!existsByCategoryId) throw CategoryNotFoundException()
         val referenceCategory = entityManager.getReference(
             Category::class.java, request.categoryId
         )
@@ -239,7 +247,7 @@ class ProductServiceImpl(
 
     fun checkAdminRole(role: UserRole) {
         if (role != UserRole.ADMIN) {
-            throw IllegalAccessException("Sizda bu amalni bajarish uchun ruxsat yo'q!")
+            throw UserAccessDeniedException()
         }
     }
 
@@ -279,10 +287,10 @@ class OrderServiceImpl(
 
     override fun cancelOrder(userId: Long, orderId: Long): Boolean {
         val order = orderRepository.findById(orderId).orElseThrow {
-            throw IllegalArgumentException("Buyurtma topilmadi: ID = $orderId")
+            throw OrderNotFoundException()
         }
         if (order.user.id != userId || order.status != OrderStatus.PENDING) {
-            throw IllegalStateException("Buyurtma bekor qilinishi mumkin emas.")
+            throw CannotCancelOrderException()
         }
         order.status = OrderStatus.CANCELLED
         orderRepository.save(order)
@@ -293,15 +301,12 @@ class OrderServiceImpl(
     @Transactional
     override fun updateOrderStatus(orderId: Long, status: OrderStatus, user: User): OrderResponse {
         if (user.role != UserRole.ADMIN) {
-            throw IllegalStateException("Sizda ushbu amalni bajarish uchun ruxsat yo'q.")
+            throw UserAccessDeniedException()
         }
-//        val order = orderRepository.findById(orderId).orElseThrow {
-//            throw IllegalArgumentException("Buyurtma topilmadi: ID = $orderId")
-//        }
         val order = orderRepository.findByIdAndDeletedFalse(orderId)
             ?: throw OrderNotFoundException()
         if (status == OrderStatus.CANCELLED) {
-            throw IllegalStateException("Buyurtma CANCELLED statusiga o‘zgartirib bo‘lmaydi.")
+            throw CannotCancelOrderException()
         }
         order.status = status
         orderRepository.save(order)
@@ -320,11 +325,16 @@ class PaymentServiceImpl(
     //process 3.
     override fun createPayment(orderId: Long, createRequest: PaymentCreateRequest): PaymentResponse {
         val order = orderRepository.findById(orderId)
-            .orElseThrow { RuntimeException("Buyurtma topilmadi: ID=$orderId") }
+            .orElseThrow { OrderNotFoundException() }
         if (order.status != OrderStatus.PENDING) {
-            throw RuntimeException("Faqat PENDING statusdagi buyurtmalar uchun to'lov qilish mumkin.")
+            throw InvalidOrderStatusException()
         }
-        val payment = paymentMapper.toEntity(createRequest, order)
+        val paymentMethod = try {
+            PaymentMethod.valueOf(createRequest.paymentMethod.toString())
+        } catch (e: IllegalArgumentException) {
+            throw InvalidPaymentMethodException()
+        }
+        val payment = paymentMapper.toEntity(createRequest.copy(paymentMethod = paymentMethod), order)
         val savedPayment = paymentRepository.save(payment)
         order.status = OrderStatus.DELIVERED
         orderRepository.save(order)
@@ -354,9 +364,8 @@ class OrderItemServiceImpl(
     //process 2.
     @Transactional
     override fun createOrderItem(request: OrderItemCreateRequest, order: Order): OrderItemResponse {
-
         val product = productRepository.findById(request.productId)
-            .orElseThrow { RuntimeException("Mahsulot topilmadi: ID=${request.productId}") }
+            .orElseThrow { ProductNotFoundException() }
         val orderItem = orderItemMapper.toEntity(request, product, order)
         val savedOrderItem = orderItemRepository.save(orderItem)
         return orderItemMapper.toDto(savedOrderItem)
@@ -370,12 +379,12 @@ class OrderItemServiceImpl(
 
     override fun cancelOrderItem(orderId: Long, productId: Long): Boolean {
         val order = orderRepository.findById(orderId)
-            .orElseThrow { RuntimeException("Buyurtma topilmadi: ID=$orderId") }
+            .orElseThrow { OrderNotFoundException() }
         if (order.status != OrderStatus.PENDING) {
-            throw IllegalStateException("Buyurtma faqat PENDING holatida bekor qilinishi mumkin.")
+            throw InvalidOrderStatusException()
         }
         val orderItem = orderItemRepository.findByOrderIdAndProductId(orderId, productId)
-            .orElseThrow { RuntimeException("Buyurtma mahsuloti topilmadi.") }
+            .orElseThrow { OrderItemNotFoundException() }
 
         orderItemRepository.delete(orderItem)
         return true
@@ -426,22 +435,136 @@ class OrderItemServiceImpl(
 
 
 
+@Service
+class CompleteOrderServiceImpl(
+    private val userService: UserService,
+    private val orderRepository: OrderRepository,
+    private val productRepository: ProductRepository,
+    private val orderItemRepository: OrderItemRepository,
+    private val paymentRepository: PaymentRepository,
+    private val orderMapper: OrderMapper,
+    private val orderItemMapper: OrderItemMapper,
+    private val paymentMapper: PaymentMapper
+) : CompleteOrderService {
+
+    override fun processOrder(userId: Long, request: FullOrderRequest): FullOrderResponse {
+        val user = userService.getUserEntity(userId)
+        val totalPrice = request.items.sumOf { it.totalPrice }
+        val order = Order(user = user, totalPrice = totalPrice, status = OrderStatus.PENDING)
+        orderRepository.save(order)
+
+        request.items.forEach { item ->
+            val product = productRepository.findById(item.productId)
+                .orElseThrow { ProductNotFoundException() }
+            val orderItem = orderItemMapper.toEntity(item, product, order)
+            orderItemRepository.save(orderItem)
+        }
+
+        val paymentMethod = try {
+            PaymentMethod.valueOf(request.payment.paymentMethod.toString())
+        } catch (e: IllegalArgumentException) {
+            throw InvalidPaymentMethodException()
+        }
+
+        if (order.status != OrderStatus.PENDING) {
+            throw InvalidOrderStatusException()
+        }
+        val payment = paymentMapper.toEntity(request.payment.copy(paymentMethod = paymentMethod), order)
+        paymentRepository.save(payment)
+        order.status = OrderStatus.DELIVERED
+        orderRepository.save(order)
+        return FullOrderResponse(
+            order = orderMapper.toDto(order),
+            payment = paymentMapper.toDto(payment)
+        )
+    }
+}
 
 
 
 @Service
-class FileDownloadServiceImpl() : FileDownloadService {
+class FileDownloadServiceImpl(
+    private val userRepository: UserRepository,
+    private val orderRepository: OrderRepository,
+    private val orderItemRepository: OrderItemRepository
+) : FileDownloadService {
 
     override fun generatePDF(userId: Long?, response: HttpServletResponse?) {
-        TODO("Not yet implemented")
+        val user = userRepository.findById(userId!!)
+            .orElseThrow { UserNotFoundException() }
+        val orders = orderRepository.findAllByUserId(userId)
+        val document = Document()
+        val outputStream = response?.outputStream
+
+        response?.contentType = "application/pdf"
+        response?.setHeader("Content-Disposition", "inline; filename=orders_${user.id}.pdf")
+
+        PdfWriter.getInstance(document, outputStream)
+        document.open()
+        document.add(Paragraph("Buyurtmalar: ${user.username}"))
+        document.add(Chunk.NEWLINE)
+
+        orders.forEach { order ->
+            document.add(Paragraph("Buyurtma ID: ${order.id}, Holat: ${order.status}"))
+            val orderItems = orderItemRepository.findByOrderId(order.id)
+            orderItems.forEach { item ->
+                document.add(Paragraph("Buyurtma elementi: ${item.product.name}, Narx: ${item.totalPrice}"))
+            }
+            document.add(Chunk.NEWLINE)
+        }
+        document.close()
     }
 
     override fun generateExcel(userId: Long?, response: HttpServletResponse?) {
-        TODO("Not yet implemented")
+        val user = userRepository.findById(userId!!)
+            .orElseThrow { UserNotFoundException() }
+        val orders = orderRepository.findAllByUserId(userId)
+        val workbook = XSSFWorkbook()
+        val sheet = workbook.createSheet("Orders")
+        val headerRow = sheet.createRow(0)
+        headerRow.createCell(0).setCellValue("Buyurtma ID")
+        headerRow.createCell(1).setCellValue("Buyurtma Holati")
+        headerRow.createCell(2).setCellValue("Buyurtma elementi")
+        headerRow.createCell(3).setCellValue("Narx")
+        var rowNum = 1
+        orders.forEach { order ->
+            val orderItems = orderItemRepository.findByOrderId(order.id)
+
+            orderItems.forEach { item ->
+                val row = sheet.createRow(rowNum++)
+                row.createCell(0).setCellValue(order.id.toString())
+                row.createCell(1).setCellValue(order.status.toString())
+                row.createCell(2).setCellValue(item.product.name)
+                row.createCell(3).setCellValue(item.totalPrice.toDouble())
+            }
+        }
+        response?.contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response?.setHeader("Content-Disposition", "attachment; filename=orders_${user.id}.xlsx")
+        workbook.write(response?.outputStream)
+        workbook.close()
     }
 
     override fun generateCSV(userId: Long?, response: HttpServletResponse?) {
-        TODO("Not yet implemented")
+        val user = userRepository.findById(userId!!)
+            .orElseThrow { UserNotFoundException() }
+
+        val orders = orderRepository.findAllByUserId(userId)
+        val writer = response?.writer
+
+        response?.contentType = "text/csv"
+        response?.setHeader("Content-Disposition", "attachment; filename=orders_${user.id}.csv")
+        writer?.append("Buyurtma ID, Buyurtma Holati, Buyurtma elementi, Narx\n")
+        orders.forEach { order ->
+            val orderItems = orderItemRepository.findByOrderId(order.id)
+
+            orderItems.forEach { item ->
+                writer?.append("${order.id}, ${order.status}, ${item.product.name}, ${item.totalPrice}\n")
+            }
+        }
+
+        writer?.flush()
     }
+
+
 }
 

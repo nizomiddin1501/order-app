@@ -33,17 +33,13 @@ enum class ErrorCodes(val code:Int) {
     ORDER_ALREADY_EXISTS(401),
 
     ORDER_ITEM_NOT_FOUND(500),
-    ORDER_ITEM_ALREADY_EXISTS(501)
+    ORDER_ITEM_ALREADY_EXISTS(501),
 
-
-
-
-
-
-
-
-
-
+    // Custom errorlar
+    ROLE_ACCESS_DENIED(600),
+    CANNOT_CANCEL_ORDER(601),
+    INVALID_ORDER_STATUS(602),
+    PAYMENT_METHOD_NOT_FOUND(603)
 }
 
 

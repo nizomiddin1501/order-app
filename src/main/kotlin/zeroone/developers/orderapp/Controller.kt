@@ -38,16 +38,14 @@ class UserController(val service: UserService) {
     @GetMapping("/page")
     fun getAll(
         @RequestParam(value = "page", defaultValue = "0") page: Int,
-        @RequestParam(value = "size", defaultValue = "10") size: Int
-    ) =
+        @RequestParam(value = "size", defaultValue = "10") size: Int) =
         service.getAll(page, size)
 
 
     @Operation(summary = "Get user by ID", description = "Fetches a single user based on the provided ID.")
     @ApiResponses(
         ApiResponse(responseCode = "200", description = "Successfully fetched the user"),
-        ApiResponse(responseCode = "404", description = "User not found")
-    )
+        ApiResponse(responseCode = "404", description = "User not found"))
     @GetMapping("{id}")
     fun getOne(@PathVariable id: Long) = service.getOne(id)
 
@@ -55,8 +53,7 @@ class UserController(val service: UserService) {
     @Operation(summary = "Create new user", description = "Creates a new user record.")
     @ApiResponses(
         ApiResponse(responseCode = "201", description = "User successfully created"),
-        ApiResponse(responseCode = "400", description = "Invalid request data")
-    )
+        ApiResponse(responseCode = "400", description = "Invalid request data"))
     @PostMapping
     fun create(@RequestBody @Valid request: UserCreateRequest) = service.create(request)
 
@@ -65,8 +62,7 @@ class UserController(val service: UserService) {
     @ApiResponses(
         ApiResponse(responseCode = "200", description = "User successfully updated"),
         ApiResponse(responseCode = "404", description = "User not found"),
-        ApiResponse(responseCode = "400", description = "Invalid request data")
-    )
+        ApiResponse(responseCode = "400", description = "Invalid request data"))
     @PutMapping("{id}")
     fun update(@PathVariable id: Long, @RequestBody @Valid request: UserUpdateRequest) = service.update(id, request)
 
@@ -74,8 +70,7 @@ class UserController(val service: UserService) {
     @Operation(summary = "Delete user by ID", description = "Deletes a user based on the provided ID.")
     @ApiResponses(
         ApiResponse(responseCode = "204", description = "User successfully deleted"),
-        ApiResponse(responseCode = "404", description = "User not found")
-    )
+        ApiResponse(responseCode = "404", description = "User not found"))
     @DeleteMapping("{id}")
     fun delete(@PathVariable id: Long) = service.delete(id)
 }
@@ -92,27 +87,19 @@ class CategoryController(val service: CategoryService) {
     fun getAll() = service.getAll()
 
 
-    @Operation(
-        summary = "Get all categories with pagination",
-        description = "Fetches categories with pagination support."
-    )
+    @Operation(summary = "Get all categories with pagination", description = "Fetches categories with pagination support.")
     @ApiResponses(ApiResponse(responseCode = "200", description = "Successfully fetched paginated categories"))
     @GetMapping("/page")
     fun getAll(
         @RequestParam(value = "page", defaultValue = "0") page: Int,
-        @RequestParam(value = "size", defaultValue = "10") size: Int
-    ) =
+        @RequestParam(value = "size", defaultValue = "10") size: Int) =
         service.getAll(page, size)
 
 
-    @Operation(
-        summary = "Get category by ID",
-        description = "Fetches a single category based on the provided category ID."
-    )
+    @Operation(summary = "Get category by ID", description = "Fetches a single category based on the provided category ID.")
     @ApiResponses(
         ApiResponse(responseCode = "200", description = "Successfully fetched the category"),
-        ApiResponse(responseCode = "404", description = "Category not found")
-    )
+        ApiResponse(responseCode = "404", description = "Category not found"))
     @GetMapping("{id}")
     fun getOne(@PathVariable id: Long) = service.getOne(id)
 
@@ -120,18 +107,15 @@ class CategoryController(val service: CategoryService) {
     @Operation(summary = "Create new category", description = "Creates a new category record.")
     @ApiResponses(
         ApiResponse(responseCode = "201", description = "Category successfully created"),
-        ApiResponse(responseCode = "400", description = "Invalid request data")
-    )
+        ApiResponse(responseCode = "400", description = "Invalid request data"))
     @PostMapping
     fun create(@RequestBody @Valid request: CategoryCreateRequest,
                @RequestParam role: UserRole) = service.create(request,role)
 
 
-    @Operation(
-        summary = "Update existing category",
-        description = "Updates an existing category based on the provided ID."
-    )
-    @ApiResponses(ApiResponse(responseCode = "200", description = "Category successfully updated"),
+    @Operation(summary = "Update existing category", description = "Updates an existing category based on the provided ID.")
+    @ApiResponses(
+             ApiResponse(responseCode = "200", description = "Category successfully updated"),
              ApiResponse(responseCode = "404", description = "Category not found"),
              ApiResponse(responseCode = "400", description = "Invalid request data"))
     @PutMapping("{id}")
@@ -170,14 +154,11 @@ class ProductController(val service: ProductService) {
         service.getAll(page, size)
 
 
-    @Operation(
-        summary = "Get product by ID",
-        description = "Fetches a single product based on the provided product ID."
-    )
+    @Operation(summary = "Get product by ID",
+        description = "Fetches a single product based on the provided product ID.")
     @ApiResponses(
         ApiResponse(responseCode = "200", description = "Successfully fetched the product"),
-        ApiResponse(responseCode = "404", description = "Product not found")
-    )
+        ApiResponse(responseCode = "404", description = "Product not found"))
     @GetMapping("{id}")
     fun getOne(@PathVariable id: Long) = service.getOne(id)
 
@@ -185,22 +166,17 @@ class ProductController(val service: ProductService) {
     @Operation(summary = "Create new product", description = "Creates a new product record.")
     @ApiResponses(
         ApiResponse(responseCode = "201", description = "Product successfully created"),
-        ApiResponse(responseCode = "400", description = "Invalid request data")
-    )
+        ApiResponse(responseCode = "400", description = "Invalid request data"))
     @PostMapping
     fun create(@RequestBody @Valid request: ProductCreateRequest,
                @RequestParam role: UserRole) = service.create(request,role)
 
 
-    @Operation(
-        summary = "Update existing product",
-        description = "Updates an existing product based on the provided ID."
-    )
+    @Operation(summary = "Update existing product", description = "Updates an existing product based on the provided ID.")
     @ApiResponses(
         ApiResponse(responseCode = "200", description = "Product successfully updated"),
         ApiResponse(responseCode = "404", description = "Product not found"),
-        ApiResponse(responseCode = "400", description = "Invalid request data")
-    )
+        ApiResponse(responseCode = "400", description = "Invalid request data"))
     @PutMapping("{id}")
     fun update(@PathVariable id: Long, @RequestBody @Valid request: ProductUpdateRequest,
                @RequestParam role: UserRole) = service.update(id, request,role)
@@ -209,8 +185,7 @@ class ProductController(val service: ProductService) {
     @Operation(summary = "Delete product by ID", description = "Deletes a product based on the provided product ID.")
     @ApiResponses(
         ApiResponse(responseCode = "204", description = "Product successfully deleted"),
-        ApiResponse(responseCode = "404", description = "Product not found")
-    )
+        ApiResponse(responseCode = "404", description = "Product not found"))
     @DeleteMapping("{id}")
     fun delete(@PathVariable id: Long,
                @RequestParam role: UserRole) = service.delete(id,role)
@@ -225,7 +200,8 @@ class OrderController(private val service: OrderService,
                       private val userService: UserService) {
 
     @Operation(summary = "Create a new order", description = "Allows a user to create an order with items.")
-    @ApiResponses(ApiResponse(responseCode = "201", description = "Order created successfully"),
+    @ApiResponses(
+            ApiResponse(responseCode = "201", description = "Order created successfully"),
             ApiResponse(responseCode = "400", description = "Invalid request data"))
     @PostMapping
     fun createOrder(
@@ -244,7 +220,8 @@ class OrderController(private val service: OrderService,
 
 
     @Operation(summary = "Cancel an order", description = "Allows a user to cancel a pending order.")
-    @ApiResponses(ApiResponse(responseCode = "200", description = "Order canceled successfully"),
+    @ApiResponses(
+             ApiResponse(responseCode = "200", description = "Order canceled successfully"),
              ApiResponse(responseCode = "400", description = "Order cannot be canceled"))
     @PutMapping("/{userId}/cancel/{orderId}")
     fun cancelOrder(@PathVariable userId: Long, @PathVariable orderId: Long): Boolean =
@@ -252,7 +229,8 @@ class OrderController(private val service: OrderService,
 
 
     @Operation(summary = "Update order status", description = "Allows an admin to update the status of an order.")
-    @ApiResponses(ApiResponse(responseCode = "200", description = "Order status updated successfully"),
+    @ApiResponses(
+            ApiResponse(responseCode = "200", description = "Order status updated successfully"),
             ApiResponse(responseCode = "403", description = "Permission denied"))
     @PutMapping("/{orderId}/status")
     fun updateOrderStatus(
@@ -274,7 +252,8 @@ class OrderController(private val service: OrderService,
 class PaymentController(private val service: PaymentService) {
 
     @Operation(summary = "Create a payment", description = "Processes a payment for a pending order.")
-    @ApiResponses(ApiResponse(responseCode = "201", description = "Payment created successfully"),
+    @ApiResponses(
+            ApiResponse(responseCode = "201", description = "Payment created successfully"),
             ApiResponse(responseCode = "400", description = "Invalid order or status"))
     @PostMapping("/{orderId}")
     fun createPayment(
@@ -300,7 +279,8 @@ class OrderItemController(private val service: OrderItemService,
                           private val orderService: OrderService) {
 
     @Operation(summary = "Create a new order item", description = "Allows adding items to an existing order.")
-    @ApiResponses(ApiResponse(responseCode = "201", description = "Order item created successfully"),
+    @ApiResponses(
+            ApiResponse(responseCode = "201", description = "Order item created successfully"),
             ApiResponse(responseCode = "400", description = "Invalid product or order"))
     @PostMapping("/{orderId}")
     fun createOrderItem(
@@ -320,7 +300,8 @@ class OrderItemController(private val service: OrderItemService,
 
 
     @Operation(summary = "Cancel an order item", description = "Removes an item from an existing order.")
-    @ApiResponses(ApiResponse(responseCode = "200", description = "Order item canceled successfully"),
+    @ApiResponses(
+            ApiResponse(responseCode = "200", description = "Order item canceled successfully"),
             ApiResponse(responseCode = "400", description = "Order cannot be modified"))
     @DeleteMapping("/{orderId}/{productId}")
     fun cancelOrderItem(
@@ -330,35 +311,68 @@ class OrderItemController(private val service: OrderItemService,
 }
 
 
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/order/complete")
+class CompleteOrderController(private val service: CompleteOrderService){
 
+    @Operation(summary = "Process a new order", description = "Creates a new order, adds items, and processes the payment.")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Order processed successfully"),
+        ApiResponse(responseCode = "400", description = "Invalid request data"),
+    )
+    @PostMapping("/process")
+    fun processOrder(
+        @RequestParam userId: Long,
+        @RequestBody request: FullOrderRequest
+    ): ResponseEntity<FullOrderResponse> {
+        val response = service.processOrder(userId, request)
+        return ResponseEntity.ok(response)
+    }
+}
 
 
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/order/files")
+@RequestMapping("/api/orders/reports-downloads")
 class FileDownloadController(val service: FileDownloadService) {
 
 
-    @GetMapping("/pdf/{id}")
+    @Operation(summary = "Generate PDF report of user orders",
+        description = "Generates a PDF report for a user's orders and sends it as a response.")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "PDF generated successfully and sent to response"),
+        ApiResponse(responseCode = "404", description = "User not found"))
+    @GetMapping("/pdf/{userId}")
     fun downloadPDF(
-        @PathVariable id: Long,
+        @PathVariable userId: Long,
         response: HttpServletResponse) =
-        service.generatePDF(id, response)
+        service.generatePDF(userId, response)
 
 
-    @GetMapping("/excel/{id}")
+    @Operation(summary = "Generate Excel report of user orders",
+        description = "Generates an Excel report for a user's orders and sends it as a response.")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Excel generated successfully and sent to response"),
+        ApiResponse(responseCode = "404", description = "User not found"))
+    @GetMapping("/excel/{userId}")
     fun downloadExcel(
-        @PathVariable id: Long,
+        @PathVariable userId: Long,
         response: HttpServletResponse) =
-        service.generatePDF(id, response)
+        service.generatePDF(userId, response)
 
 
-    @GetMapping("/csv/{id}")
+    @Operation(summary = "Generate CSV report of user orders",
+        description = "Generates a CSV report for a user's orders and sends it as a response.")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "CSV generated successfully and sent to response"),
+        ApiResponse(responseCode = "404", description = "User not found"))
+    @GetMapping("/csv/{userId}")
     fun downloadCSV(
-        @PathVariable id: Long,
+        @PathVariable userId: Long,
         response: HttpServletResponse) =
-        service.generatePDF(id, response)
+        service.generatePDF(userId, response)
 
 }
 

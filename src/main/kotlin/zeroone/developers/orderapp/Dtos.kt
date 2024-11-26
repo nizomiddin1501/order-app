@@ -303,6 +303,16 @@ data class ProductOrderStatistics(
     val totalAmount: Double
 )
 
+data class FullOrderRequest(
+    val items: List<OrderItemCreateRequest>,
+    val payment: PaymentCreateRequest
+)
+
+data class FullOrderResponse(
+    val order: OrderResponse,
+    val payment: PaymentResponse
+)
+
 
 
 
