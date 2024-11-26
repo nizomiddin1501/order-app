@@ -1,9 +1,7 @@
 package zeroone.developers.orderapp
 
-import com.itextpdf.text.Chunk
-import com.itextpdf.text.Document
-import com.itextpdf.text.DocumentException
-import com.itextpdf.text.Paragraph
+import com.itextpdf.text.*
+import com.itextpdf.text.pdf.PdfPTable
 import com.itextpdf.text.pdf.PdfWriter
 import jakarta.persistence.EntityManager
 import jakarta.servlet.http.HttpServletResponse
@@ -46,6 +44,7 @@ interface ProductService {
 
 interface OrderService {
     fun createOrder(userId: Long, items: List<OrderItemCreateRequest>): OrderResponse
+//    fun getUserOrders(userId: Long): List<OrderWithProductResponse>
     fun getUserOrders(userId: Long): List<OrderResponse>
     fun getOrderEntity(orderId: Long): Order
     fun cancelOrder(userId: Long, orderId: Long): Boolean
@@ -77,13 +76,13 @@ interface CompleteOrderService{
 interface FileDownloadService {
 
     @Throws(IOException::class, DocumentException::class)
-    fun generatePDF(userId: Long?, response: HttpServletResponse?)
+    fun generatePDF(userId: Long, response: HttpServletResponse)
 
     @Throws(IOException::class)
-    fun generateExcel(userId: Long?, response: HttpServletResponse?)
+    fun generateExcel(userId: Long, response: HttpServletResponse)
 
     @Throws(IOException::class)
-    fun generateCSV(userId: Long?, response: HttpServletResponse?)
+    fun generateCSV(userId: Long, response: HttpServletResponse)
 }
 
 @Service
@@ -189,7 +188,6 @@ class CategoryServiceImpl(
     }
 }
 
-
 @Service
 class ProductServiceImpl(
     private val productRepository: ProductRepository,
@@ -254,6 +252,15 @@ class ProductServiceImpl(
 }
 
 
+
+
+
+
+
+
+
+
+
 @Service
 class OrderServiceImpl(
     private val orderRepository: OrderRepository,
@@ -280,6 +287,10 @@ class OrderServiceImpl(
         }
         return orderMapper.toDto(order)
     }
+
+//    override fun getUserOrders(userId: Long): List<OrderWithProductResponse> {
+//        return orderRepository.findOrdersWithProductNames(userId)
+//    }
 
     override fun getUserOrders(userId: Long): List<OrderResponse> {
         return orderRepository.findAllByUserId(userId).map { orderMapper.toDto(it) }
@@ -507,80 +518,110 @@ class FileDownloadServiceImpl(
     private val orderItemRepository: OrderItemRepository
 ) : FileDownloadService {
 
-    override fun generatePDF(userId: Long?, response: HttpServletResponse?) {
-        val user = userRepository.findById(userId!!)
+    @Throws(IOException::class, DocumentException::class)
+    override fun generatePDF(userId: Long, response: HttpServletResponse) {
+        val user = userRepository.findById(userId)
             .orElseThrow { UserNotFoundException() }
         val orders = orderRepository.findAllByUserId(userId)
+
+        response.contentType = "application/pdf"
+        response.setHeader("Content-Disposition", "attachment; filename=orders_${user.id}.pdf")
+
         val document = Document()
-        val outputStream = response?.outputStream
-
-        response?.contentType = "application/pdf"
-        response?.setHeader("Content-Disposition", "inline; filename=orders_${user.id}.pdf")
-
-        PdfWriter.getInstance(document, outputStream)
+        PdfWriter.getInstance(document, response.outputStream)
         document.open()
-        document.add(Paragraph("Buyurtmalar: ${user.username}"))
-        document.add(Chunk.NEWLINE)
+
+        document.add(Paragraph("Foydalanuvchi: ${user.username} ${user.role}"))
+        document.add(Paragraph("Buyurtmalar ro'yxati:"))
+
+        val table = PdfPTable(5)
+        table.addCell("Buyurtma ID")
+        table.addCell("Holati")
+        table.addCell("Mahsulot nomi")
+        table.addCell("Narx")
+        table.addCell("Kategoriya nomi")
 
         orders.forEach { order ->
-            document.add(Paragraph("Buyurtma ID: ${order.id}, Holat: ${order.status}"))
             val orderItems = orderItemRepository.findByOrderId(order.id)
             orderItems.forEach { item ->
-                document.add(Paragraph("Buyurtma elementi: ${item.product.name}, Narx: ${item.totalPrice}"))
+                table.addCell(order.id.toString())
+                table.addCell(order.status.toString())
+                table.addCell(item.product.name)
+                table.addCell(item.totalPrice.toString())
+                table.addCell(item.product.category.name)
             }
-            document.add(Chunk.NEWLINE)
         }
+
+        document.add(table)
         document.close()
     }
 
-    override fun generateExcel(userId: Long?, response: HttpServletResponse?) {
-        val user = userRepository.findById(userId!!)
+
+
+    @Throws(IOException::class)
+    override fun generateExcel(userId: Long, response: HttpServletResponse) {
+        response.reset()
+        response.contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response.setHeader("Content-Disposition", "attachment; filename=orders_${userId}.xlsx")
+
+        val user = userRepository.findById(userId)
             .orElseThrow { UserNotFoundException() }
         val orders = orderRepository.findAllByUserId(userId)
+
         val workbook = XSSFWorkbook()
         val sheet = workbook.createSheet("Orders")
         val headerRow = sheet.createRow(0)
         headerRow.createCell(0).setCellValue("Buyurtma ID")
-        headerRow.createCell(1).setCellValue("Buyurtma Holati")
-        headerRow.createCell(2).setCellValue("Buyurtma elementi")
+        headerRow.createCell(1).setCellValue("Holati")
+        headerRow.createCell(2).setCellValue("Mahsulot nomi")
         headerRow.createCell(3).setCellValue("Narx")
+        headerRow.createCell(4).setCellValue("Kategoriya nomi")
+
         var rowNum = 1
         orders.forEach { order ->
             val orderItems = orderItemRepository.findByOrderId(order.id)
-
             orderItems.forEach { item ->
                 val row = sheet.createRow(rowNum++)
                 row.createCell(0).setCellValue(order.id.toString())
                 row.createCell(1).setCellValue(order.status.toString())
                 row.createCell(2).setCellValue(item.product.name)
                 row.createCell(3).setCellValue(item.totalPrice.toDouble())
+                row.createCell(4).setCellValue(item.product.category.name)
             }
         }
-        response?.contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response?.setHeader("Content-Disposition", "attachment; filename=orders_${user.id}.xlsx")
-        workbook.write(response?.outputStream)
+
+        workbook.write(response.outputStream)
         workbook.close()
     }
 
-    override fun generateCSV(userId: Long?, response: HttpServletResponse?) {
-        val user = userRepository.findById(userId!!)
+
+
+    @Throws(IOException::class)
+    override fun generateCSV(userId: Long, response: HttpServletResponse) {
+        response.reset() 
+        response.contentType = "text/csv"
+        response.setHeader("Content-Disposition", "attachment; filename=orders_${userId}.csv")
+
+        val user = userRepository.findById(userId)
             .orElseThrow { UserNotFoundException() }
-
         val orders = orderRepository.findAllByUserId(userId)
-        val writer = response?.writer
 
-        response?.contentType = "text/csv"
-        response?.setHeader("Content-Disposition", "attachment; filename=orders_${user.id}.csv")
-        writer?.append("Buyurtma ID, Buyurtma Holati, Buyurtma elementi, Narx\n")
+        val writer = response.writer
+        writer.append("Buyurtma ID,Holati,Mahsulot nomi,Narx,Kategoriya nomi\n")
+
         orders.forEach { order ->
             val orderItems = orderItemRepository.findByOrderId(order.id)
-
             orderItems.forEach { item ->
-                writer?.append("${order.id}, ${order.status}, ${item.product.name}, ${item.totalPrice}\n")
+                writer.append("${order.id},")
+                writer.append("${order.status},")
+                writer.append("${item.product.name},")
+                writer.append("${item.totalPrice},")
+                writer.append("${item.product.category.name}\n")
             }
         }
 
-        writer?.flush()
+        writer.flush()
+        writer.close()
     }
 
 

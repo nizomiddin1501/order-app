@@ -129,6 +129,18 @@ interface OrderRepository : BaseRepository<Order> {
     @Query("SELECT o FROM orders o WHERE o.user.id = :userId AND o.createdDate BETWEEN :startDate AND :endDate")
     fun findAllByUserIdAndDateRange(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<Order>
 
+    @Query("""
+        select o.id as orderId, o.status as status, o.totalPrice as totalPrice,
+               oi.product.name as productName, oi.totalPrice as productPrice
+        from orders o
+        join order_items oi on o.id = oi.order.id
+        where o.user.id = :userId
+    """)
+    fun findOrdersWithProductNames(@Param("userId") userId: Long): List<OrderWithProductResponse>
+
+
+
+
 
 }
 

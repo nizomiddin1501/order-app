@@ -322,6 +322,14 @@ data class FullOrderResponse(
     val payment: PaymentResponse
 )
 
+data class OrderWithProductResponse(
+    val orderId: Long,
+    val status: String,
+    val totalPrice: BigDecimal,
+    val productName: String,
+    val productPrice: BigDecimal
+)
+
 
 
 
