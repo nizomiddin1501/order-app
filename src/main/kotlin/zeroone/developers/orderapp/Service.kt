@@ -598,7 +598,7 @@ class FileDownloadServiceImpl(
 
     @Throws(IOException::class)
     override fun generateCSV(userId: Long, response: HttpServletResponse) {
-        response.reset() 
+        response.reset()
         response.contentType = "text/csv"
         response.setHeader("Content-Disposition", "attachment; filename=orders_${userId}.csv")
 

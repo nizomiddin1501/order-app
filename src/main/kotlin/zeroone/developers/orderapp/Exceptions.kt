@@ -13,7 +13,7 @@ sealed class BillingExceptionHandler() : RuntimeException() {
                 errorCode().name, getArguments(), LocaleContextHolder.getLocale()
             )
         } catch (e: Exception) {
-            e.message
+            e.message ?: "Unknown error"
         }
         return BaseMessage(errorCode().code, message)
     }

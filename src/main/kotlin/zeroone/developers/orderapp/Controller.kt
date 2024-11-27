@@ -215,7 +215,7 @@ class OrderController(private val service: OrderService,
     @Operation(summary = "Get user orders", description = "Fetches all orders for a specific user.")
     @ApiResponses(ApiResponse(responseCode = "200", description = "Orders fetched successfully"))
     @GetMapping("/{userId}")
-    fun getUserOrders(@PathVariable userId: Long): List<OrderResponse> =
+    fun getUserOrders(@PathVariable userId: Long): List<OrderResponse > =
         service.getUserOrders(userId)
 
 
