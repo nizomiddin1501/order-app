@@ -7,6 +7,7 @@ import jakarta.persistence.EntityManager
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.transaction.Transactional
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -65,8 +66,6 @@ interface OrderItemService {
     fun getUserOrdersByMonth(userId: Long, month: Int, year: Int): OrderStatistics
     fun getUserOrderStatisticsByPeriod(userId: Long, startDate: LocalDateTime, endDate: LocalDateTime): List<ProductOrderStatistics>
     fun getProductOrderCount(productId: Long): Int
-
-
 }
 
 interface CompleteOrderService{
@@ -74,6 +73,9 @@ interface CompleteOrderService{
 }
 
 interface FileDownloadService {
+
+    @Throws(IOException::class, DocumentException::class)
+    fun generateWord(userId: Long, response: HttpServletResponse)
 
     @Throws(IOException::class, DocumentException::class)
     fun generatePDF(userId: Long, response: HttpServletResponse)
@@ -130,11 +132,11 @@ class UserServiceImpl(
         userRepository.save(updateUser)
     }
 
+    @Transactional
     override fun delete(id: Long) {
         userRepository.trash(id) ?: throw UserNotFoundException()
     }
 }
-
 
 @Service
 class CategoryServiceImpl(
@@ -176,6 +178,7 @@ class CategoryServiceImpl(
         categoryRepository.save(updateCategory)
     }
 
+    @Transactional
     override fun delete(id: Long, role: UserRole) {
         checkAdminRole(role)
         categoryRepository.trash(id) ?: throw CategoryNotFoundException()
@@ -221,11 +224,11 @@ class ProductServiceImpl(
         val existsByCategoryId = categoryRepository.existsByCategoryId(request.categoryId)
         if (!existsByCategoryId) throw CategoryNotFoundException()
         val referenceCategory = entityManager.getReference(
-            Category::class.java, request.categoryId
-        )
+            Category::class.java, request.categoryId)
         productRepository.save(productMapper.toEntity(request, referenceCategory))
     }
 
+    //changed
     override fun update(id: Long, request: ProductUpdateRequest, role: UserRole) {
         checkAdminRole(role)
         val product = productRepository.findByIdAndDeletedFalse(id) ?: throw ProductNotFoundException()
@@ -234,10 +237,13 @@ class ProductServiceImpl(
             if (findByName != null) throw ProductAlreadyExistsException()
             product.name = it
         }
-        val updateOrder = productMapper.updateEntity(product, request)
-        productRepository.save(updateOrder)
+        request.stockCount.let { product.stockCount = it }
+        request.price.let { product.price = it }
+        val updateProduct = productMapper.updateEntity(product, request)
+        productRepository.save(updateProduct)
     }
 
+    @Transactional
     override fun delete(id: Long, role: UserRole) {
         checkAdminRole(role)
         productRepository.trash(id) ?: throw ProductNotFoundException()
@@ -250,16 +256,6 @@ class ProductServiceImpl(
     }
 
 }
-
-
-
-
-
-
-
-
-
-
 
 @Service
 class OrderServiceImpl(
@@ -288,9 +284,6 @@ class OrderServiceImpl(
         return orderMapper.toDto(order)
     }
 
-//    override fun getUserOrders(userId: Long): List<OrderWithProductResponse> {
-//        return orderRepository.findOrdersWithProductNames(userId)
-//    }
 
     override fun getUserOrders(userId: Long): List<OrderResponse> {
         return orderRepository.findAllByUserId(userId).map { orderMapper.toDto(it) }
@@ -325,7 +318,6 @@ class OrderServiceImpl(
     }
 }
 
-
 @Service
 class PaymentServiceImpl(
     private val paymentRepository: PaymentRepository,
@@ -335,6 +327,7 @@ class PaymentServiceImpl(
 ) : PaymentService {
 
     //process 3.
+    @Transactional
     override fun createPayment(orderId: Long, createRequest: PaymentCreateRequest): PaymentResponse {
         val order = orderRepository.findById(orderId)
             .orElseThrow { OrderNotFoundException() }
@@ -364,10 +357,7 @@ class PaymentServiceImpl(
         return paymentRepository.findByOrderUserId(userId)
             .map { paymentMapper.toDto(it) }
     }
-
-
 }
-
 
 @Service
 class OrderItemServiceImpl(
@@ -396,6 +386,7 @@ class OrderItemServiceImpl(
             .map { orderItemMapper.toDto(it) }
     }
 
+    @Transactional
     override fun cancelOrderItem(orderId: Long, productId: Long): Boolean {
         val order = orderRepository.findById(orderId)
             .orElseThrow { OrderNotFoundException() }
@@ -452,8 +443,6 @@ class OrderItemServiceImpl(
     }
 }
 
-
-
 @Service
 class CompleteOrderServiceImpl(
     private val userService: UserService,
@@ -467,6 +456,7 @@ class CompleteOrderServiceImpl(
     private val userRepository: UserRepository
 ) : CompleteOrderService {
 
+    @Transactional
     override fun processOrder(userId: Long, request: FullOrderRequest): FullOrderResponse {
         val user = userService.getUserEntity(userId)
         val totalPrice = request.items.sumOf { it.totalPrice }
@@ -509,14 +499,63 @@ class CompleteOrderServiceImpl(
     }
 }
 
-
-
 @Service
 class FileDownloadServiceImpl(
     private val userRepository: UserRepository,
     private val orderRepository: OrderRepository,
     private val orderItemRepository: OrderItemRepository
 ) : FileDownloadService {
+
+    @Throws(IOException::class)
+    override fun generateWord(userId: Long, response: HttpServletResponse) {
+        response.reset()
+        response.contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        response.setHeader("Content-Disposition", "attachment; filename=orders_${userId}.docx")
+
+        val user = userRepository.findById(userId)
+            .orElseThrow { UserNotFoundException() }
+        val orders = orderRepository.findAllByUserId(userId)
+        val document = XWPFDocument()
+
+        // Add User Information
+        val userParagraph = document.createParagraph()
+        val userRun = userParagraph.createRun()
+        userRun.isBold = true
+        userRun.fontSize = 14
+        userRun.setText("Foydalanuvchi: ${user.username} (${user.role})")
+
+        // Add Order List Header
+        val headerParagraph = document.createParagraph()
+        val headerRun = headerParagraph.createRun()
+        headerRun.isBold = true
+        headerRun.fontSize = 12
+        headerRun.setText("Buyurtmalar ro'yxati:")
+
+        // Add Table
+        val table = document.createTable()
+        val headerRow = table.getRow(0)
+        headerRow.getCell(0).setText("Buyurtma ID")
+        headerRow.addNewTableCell().setText("Holati")
+        headerRow.addNewTableCell().setText("Mahsulot nomi")
+        headerRow.addNewTableCell().setText("Narx")
+        headerRow.addNewTableCell().setText("Kategoriya nomi")
+
+        orders.forEach { order ->
+            val orderItems = orderItemRepository.findByOrderId(order.id)
+            orderItems.forEach { item ->
+                val row = table.createRow()
+                row.getCell(0).setText(order.id.toString())
+                row.getCell(1).setText(order.status.toString())
+                row.getCell(2).setText(item.product.name)
+                row.getCell(3).setText(item.totalPrice.toString())
+                row.getCell(4).setText(item.product.category.name)
+            }
+        }
+
+        // Write to Response OutputStream
+        document.write(response.outputStream)
+        document.close()
+    }
 
     @Throws(IOException::class, DocumentException::class)
     override fun generatePDF(userId: Long, response: HttpServletResponse) {
@@ -619,11 +658,8 @@ class FileDownloadServiceImpl(
                 writer.append("${item.product.category.name}\n")
             }
         }
-
         writer.flush()
         writer.close()
     }
-
-
 }
 

@@ -275,16 +275,16 @@ data class PaymentResponse(
     val id: Long?,
 
     @Schema(description = "Order related to the payment", example = "Order ID: 3")
-    val orderStatus: String,
+    val orderStatus: String?,
 
     @Schema(description = "Amount paid", example = "150.00")
-    var amount: BigDecimal,
+    var amount: BigDecimal?,
 
     @Schema(description = "Payment date and time", example = "2024-11-24T10:15:30")
     var paymentDate: LocalDateTime = LocalDateTime.now(),
 
     @Schema(description = "Payment method used", example = "CREDIT_CARD")
-    var paymentMethod: PaymentMethod
+    var paymentMethod: PaymentMethod?
 )
 
 

@@ -94,7 +94,7 @@ interface CategoryRepository : BaseRepository<Category> {
     """)
     fun findByName(id: Long, name: String): Category?
 
-    // User ID exists check
+    // Category ID exists check
     @Query(value = "select count(*) > 0 from category c where c.id = :id", nativeQuery = true)
     fun existsByCategoryId(@Param("id") id: Long?): Boolean
 
@@ -137,10 +137,6 @@ interface OrderRepository : BaseRepository<Order> {
         where o.user.id = :userId
     """)
     fun findOrdersWithProductNames(@Param("userId") userId: Long): List<OrderWithProductResponse>
-
-
-
-
 
 }
 

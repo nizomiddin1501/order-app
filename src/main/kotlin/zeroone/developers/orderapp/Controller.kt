@@ -1,5 +1,4 @@
 package zeroone.developers.orderapp
-
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -149,8 +148,7 @@ class ProductController(val service: ProductService) {
     @GetMapping("/page")
     fun getAll(
         @RequestParam(value = "page", defaultValue = "0") page: Int,
-        @RequestParam(value = "size", defaultValue = "10") size: Int
-    ) =
+        @RequestParam(value = "size", defaultValue = "10") size: Int) =
         service.getAll(page, size)
 
 
@@ -338,6 +336,16 @@ class CompleteOrderController(private val service: CompleteOrderService){
 @RequestMapping("/api/orders/reports-downloads")
 class FileDownloadController(val service: FileDownloadService) {
 
+    @Operation(summary = "Generate Word report of user orders",
+        description = "Generates a Word report for a user's orders and sends it as a response.")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Word generated successfully and sent to response"),
+        ApiResponse(responseCode = "404", description = "User not found"))
+    @GetMapping("/word/{userId}")
+    fun downloadWord(
+        @PathVariable userId: Long,
+        response: HttpServletResponse) =
+        service.generateWord(userId, response)
 
     @Operation(summary = "Generate PDF report of user orders",
         description = "Generates a PDF report for a user's orders and sends it as a response.")
@@ -360,7 +368,7 @@ class FileDownloadController(val service: FileDownloadService) {
     fun downloadExcel(
         @PathVariable userId: Long,
         response: HttpServletResponse) =
-        service.generatePDF(userId, response)
+        service.generateExcel(userId, response)
 
 
     @Operation(summary = "Generate CSV report of user orders",
@@ -372,9 +380,11 @@ class FileDownloadController(val service: FileDownloadService) {
     fun downloadCSV(
         @PathVariable userId: Long,
         response: HttpServletResponse) =
-        service.generatePDF(userId, response)
+        service.generateCSV(userId, response)
 
 }
+
+
 
 
 

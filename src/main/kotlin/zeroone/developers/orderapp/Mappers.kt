@@ -45,7 +45,7 @@ class CategoryMapper {
         return category.run {
             CategoryResponse(
                 id = this.id,
-                name = this.name,
+                name = this.name
             )
         }
     }
@@ -53,7 +53,7 @@ class CategoryMapper {
     fun toEntity(createRequest: CategoryCreateRequest): Category {
         return createRequest.run {
             Category(
-                name = this.name,
+                name = this.name
             )
         }
     }
@@ -66,7 +66,6 @@ class CategoryMapper {
         }
     }
 }
-
 
 @Component
 class ProductMapper {
@@ -104,7 +103,6 @@ class ProductMapper {
         }
     }
 }
-
 
 @Component
 class OrderMapper {
@@ -179,7 +177,6 @@ class OrderItemMapper {
     }
 }
 
-
 @Component
 class PaymentMapper {
 
@@ -216,8 +213,3 @@ class PaymentMapper {
         }
     }
 }
-
-
-
-
-
